@@ -1,0 +1,150 @@
+In the project, you will use machine-learning techniques in a realistic setting. We will provide a set of projects and corresponding datasets that you can choose from. You will work in groups of 4 people1, using Piazza to find teammates, and will collaborate to produce a project report that will be assessed.
+
+    Each group only submits one report. All members of the group will receive the same grade, excepting any special/extenuating circumstances. The grade will be based on the final report only.
+
+You will have considerable freedom in the projects, but it should involve most parts of techniques described in the lectures. This would typically involve
+
+    -reading up on some relevant background to well understand the task and what has been done previously (via google scholar, internet search, in some cases references are provided)
+    -some exploratory data analysis
+    -if classification is the goal, choosing methods that might work well on the task, based on the earlier steps
+    evaluating the results of the different methods on the task (e.g. assessing generalisation performance).
+
+Note that you’re not required to outperform prior methods. The important thing is that the approaches taken are reasonable, methodologically correct, and clearly described in the report. Good projects would nonetheless discuss possible reasons for performance differences compared to more advanced approaches.
+
+        Sample project reports that provide a rough guide for what goes into the projects
+            Example 1: scored around 70% and slightly above
+            Example 2: scored around 60%
+
+    Note: these reports are 8 pages long, but your reports only need to be 6 pages.
+
+FAQ
+
+    Are we allowed to explore methods that are not explicitly covered in the course?
+
+    Yes, that’s perfectly fine. There is no requirement to stick to just using what is taught in the course. Having said that, it is your responsibility to ensure that your report covers enough of the background material for whatever methods you employ so that an intelligent reader will be able to follow your reasoning and evaluate your findings.
+
+    What needs to be put in the main report and what goes in the appendix?
+
+    All the text and figures required to understand and evaluate your contributions need to go within the 6-page limit. References and statements of contribution for team members are not counted in the page limit.
+
+    You may also optionally include an appendix with additional information, results, or examples. These are not directly evaluated; much like is standard practice for academic papers. The purpose of an appendix is to allow for extra material that is not essential to the understanding of the main paper, but helps provide a more comprehensive understanding of the undertaken research. The reviewers/markers are not obligated to read appendices/supplementary material. They may choose to do so, but don’t have to.
+
+    What details about the team should we provide in the report.
+
+    You should only provide the student IDs (UUNs) of the team members (not exam numbers). Please don’t provide your names, emails, or other information. The LaTeX template reflects this.
+
+    What should we provide in the statement of contributions at the end of the report?
+
+    You should provide a brief description of what each team member did for the project. This can be as simple as 2-3 sentences for each individual outlining the tasks the performed, e.g. implementing the methods in Section X, writing section, Y, jointly coming up with the main ideas, co-writing Section Z, etc. Do not use your names; use only your student ID number.
+
+    Can we use Generative AI (ChatGPT, etc) for the coursework?
+
+    Please see Guidance on the use of Generative AI in the course information page.
+
+    Can we extend the given data by including additional features or attributes, or augment the given data with additional data?
+
+    Yes, it should be fine to extend or augment the given data. However, we’d expect the originally provided data to still be present and used without modification.
+
+    How many questions should we explore in the report?
+
+    The questions we include in the project descriptions are not mandatory, just suggestions. You are not expected to answer all of them, and are free to come up with your own ideas. Exploring a larger number of questions is not necessarily better. A good report involving four team members could explore a single substantive question, or perhaps a combination of questions, be well written, clearly structured, and have a thorough analysis. Negative results, where properly explored and analysed are also of interest.
+
+Important Dates
+
+Fri 03 Oct, 12pm
+    Each group (any one member) should fill-in the project details form with the student numbers (UUNs) of the members and the choice of project topic.
+Wed 29 Oct, 5pm
+    Each group (any one member) must upload a progress report using the project progress report form. This is not assessed. The goal is to ensure your project has the right scope and that you are on track. The report must be at least two pages, in the given latex template, and can include whatever you’ve already written up thus far. To help us understand your plans, please include brief sections on “Current Progress” and “Plans for Completion” beyond anything already written up.
+Fri 31 Oct, 1-4pm AT 5.04
+    When submitting the progress report, you may choose to come to a drop-in session where we can provide some basic feedback. It is entirely optional, and attendance is not enforced. NOTE This session is primarily to help those who may have potentially gone off track or fallen behind, realign and focus on finishing up things.
+Thu 20 Nov, 12pm
+    Final report due. You should submit the report as a single PDF, including references and appendices, with the filename as your 2-digit group number. For example, group 6 would submit 06.pdf.
+    The maximum page limit is 6 pages, and the references, statement of contribution, and appendices do not count towards the page limit. 
+
+Authors’ Instructions
+
+The report should be maximally 6 pages long (excluding references), using this report template2 (adapted from the NeurIPS template). It should contain the following in some manner:
+
+    description of the task
+    relevant background and related previous work
+    explanation of the significance/relevance of the objective/task
+    information on the data preparation
+    exploratory data analysis
+    description of the learning (e.g. classification) methods used
+    results and evaluation
+    conclusions
+
+You are expected to discuss the work within your group, and to work on your report together. You should write up the project as a whole, including the work of the others in your project. Please cite your sources (data, methods, etc.) appropriately.
+At the end of the report, there should be a short description of how each member of the group contributed to the project, which can be on an additional page (not counted for page limit).
+Marking
+
+The marking criteria include the appropriateness of the machine learning methods chosen, quality of the analysis, the quality of the evaluation, the amount of work, and the quality of the explanation of the report (both text and graphics)—in keeping with the components listed above for the report. While you will be marked out of 100 in line with the common marking scheme, an interpretation of the scheme can be seen as:
+
+70-100
+    Excellent explanation and description of points above plus extra achievement at understanding or analysis of results. Clear explanations, evidence of creative or deeper thought will contribute to a higher grade.
+60-69
+    Excellent explanation and description of points above, with some minor deficiencies.
+50-59
+    Well explained description of points above, be some deficiencies with writing or work undertaken.
+40-49
+    Sufficient description of points above but significant deficiencies.
+30-39
+    Evidence that the student has gained some understanding, but not addressed the specified task properly.
+0-29
+    Serious error or slack work.
+
+Good Scholarly Practice
+
+Please remember the good scholarly practice requirements of the University regarding work for credit. You can find guidance at the School’s page on academic misconduct.
+Projects
+Species Analysis
+
+You are working for an NGO and are tasked with mapping biodiversity across the world. You have been provided with a dataset which encodes the geographic locations where different animal species have been observed. As part of the analyses into understanding what measures can be taken to help conservation efforts, there are a number of potential questions that one might consider, including:
+
+    For any given species, where can one find them in the world?
+    For a given location in the world, what and how many species may be observed there?
+    Can you discover any interesting relationships between species? e.g. does the presence of one species in a location tell you about the possible presence of others?
+    Can you discover any interesting relationships between species and locations? e.g. do specific species have a preference for certain habitats.
+
+Your goal is to take inspiration from the data analysis and machine learning algorithms we have seen in the class to create predictive models to explore questions such as, but not limited to, the ones above. The data has been processed for you in terms of train and test files already, including some additional training data if you would like to use it. Note, you should not train on the test data. A simple script that details how to load and minimally visualise this data is also included.
+
+Link to data
+Spotify Analysis
+
+You are a skunkworks team within Spotify tasked with exploring ways by which the company can get better insight about the artists, albums, and user preferences for music. You’ve been given access to data from the “Top 200” playlists published globally by Spotify from 01/01/2017 to 31/05/2023 comprising of nearly 0.5M songs composed of different regional charts! This data has canonical information such as track titles, artist info, url, and so on.
+
+To help you analyse things better, you have been authorised access to additional information compiled by the User-engagement and Metrics team, which includes:
+
+    scores for features associated with tracks, like ‘danceability’, ‘instrumentalness’, and so on,
+    custom overall rank from a points system for tracks based on individual-playlist rank (200 points for first, 1 for last), and
+    per-artist scores where multiple artists have collaborated on track (equal split)
+
+Your task is to analyse the data given to you and explore predictive tasks that could provide the company with insight on some burning questions such as:
+
+    Can we figure out which artists or genres are going to be popular in 2025 given the historic data from 2017?
+    Are there any patterns in what day(s) of the week and/or months experience the most streams?
+    What features drive popularity of music; is it the artist(s), or something about the song?
+    Based on the existing collaborations between artists and the resulting popularity, can we predict which new collaborations are likely to work well?
+
+Note
+    Please use delimiter ";" to read the data csv file correctly.
+
+Link to data
+Club Football Analysis
+
+You’re part of the newly created data-analytics team at Captain Tsubasa TV. Your primary focus is on exploring and building analytic models of performance to provide talking points for presenters and panelists on regularly broadcast programmes on the channel.
+
+You’ve been given access to a curated dataset of football match data from 27 countries and 42 leagues worldwide, from as far back as the 2000/01 season to the recently concluded 2024/25 season.
+
+The data is organised into two files: one providing a regularly updated time-course of a club’s ELO ratings, and the other a comprehensive dataset of matches, with details of timings, recent form, home/away statistics, betting odds, and results.
+
+Your task it to try and extract interesting insights for punters and pundits alike. Some potential questions you might consider are:
+
+    What can we say about the characteristics of strong and dominant teams across different eras? Are they comparable/distinct on any particular features?
+    Can we compare the relative strengths of leagues using this data? Does it confirm or deny popular opinion that the English Premier League is the ‘best’?
+    For a given matchup between teams, what is more useful to predict results: most recent form, or historical form between the teams. How does this correlate with the betting odds for a given match?
+
+    Excepting special/extenuating circumstances. ↩
+
+    You can use Overleaf through the University to create and edit LaTeX documents. See https://www.overleaf.com/edu/edinburgh. ↩
+
