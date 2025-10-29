@@ -61,61 +61,62 @@ if __name__ == '__main__':
     world = world.to_crs(epsg=4326)
 
 
-    # --- Create figure and subplots ---
-    fig, axes = plt.subplots(1, 2, figsize=(18, 7), sharex=True, sharey=True)
-    fig.patch.set_facecolor("white")
-
     # ==============================================================
-    # LEFT: raw point map
+    # 1️⃣ Raw species sightings plot
     # ==============================================================
 
-    axes[0].set_facecolor("#d7ebff")
-    world.plot(ax=axes[0], color='whitesmoke', edgecolor='gray', linewidth=0.5)
+    fig1, ax1 = plt.subplots(figsize=(7, 4))
+    fig1.patch.set_facecolor("white")
+    ax1.set_facecolor("#d7ebff")
 
+    world.plot(ax=ax1, color='whitesmoke', edgecolor='gray', linewidth=0.5)
     gdf.plot(
-        ax=axes[0],
+        ax=ax1,
         marker='.',
         color='crimson',
         markersize=2,
         alpha=0.6,
     )
 
-    axes[0].set_title('Raw Species Sightings')
-    axes[0].set_xlabel('Longitude')
-    axes[0].set_ylabel('Latitude')
+    ax1.set_title('Raw Species Sightings')
+    ax1.set_xlabel('Longitude')
+    ax1.set_ylabel('Latitude')
+    ax1.set_xlim(-180, 180)
+    ax1.set_ylim(-90, 90)
 
+    plt.tight_layout()
+    plt.savefig("species_raw_plot.png", dpi=300, bbox_inches='tight')
+    plt.close(fig1)
 
     # ==============================================================
-    # RIGHT: grid-based density heatmap
+    # 2️⃣ Grid-based density heatmap
     # ==============================================================
 
+    fig2, ax2 = plt.subplots(figsize=(7, 4))
+    fig2.patch.set_facecolor("white")
+    ax2.set_facecolor("#d7ebff")
 
-    axes[1].set_facecolor("#d7ebff")
-    world.plot(ax=axes[1], color='whitesmoke', edgecolor='none')
+    world.plot(ax=ax2, color='whitesmoke', edgecolor='none')
 
     grid_land.plot(
-        ax=axes[1],
+        ax=ax2,
         column='count',
         cmap='magma',
         norm=LogNorm(),
-        # legend=True,
+        legend=True,
         legend_kwds={'label': 'Sightings per cell (log scale)', 'shrink': 0.6},
         linewidth=0,
         alpha=0.9
     )
 
-    world.boundary.plot(ax=axes[1], color='black', linewidth=0.5)
+    world.boundary.plot(ax=ax2, color='black', linewidth=0.5)
 
-    axes[1].set_title(f'Species Sightings per {grid_size}° Grid Cell')
-    axes[1].set_xlabel('Longitude')
-
-    # ==============================================================
-    # Final layout tweaks
-    # ==============================================================
-
-    for ax in axes:
-        ax.set_xlim(-180, 180)
-        ax.set_ylim(-90, 90)
+    ax2.set_title(f'Species Sightings per {grid_size}° Grid Cell')
+    ax2.set_xlabel('Longitude')
+    ax2.set_ylabel('Latitude')
+    ax2.set_xlim(-180, 180)
+    ax2.set_ylim(-90, 90)
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig("species_grid_plot.png", dpi=300, bbox_inches='tight')
+    plt.close(fig2)

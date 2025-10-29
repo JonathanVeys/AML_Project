@@ -23,6 +23,9 @@ if __name__ == '__main__':
         }
     )
 
+    print(df)
+
+
     
     def build_species_matrix(data: pd.DataFrame, taxon_names_lookup: pd.DataFrame, grid_size: float = 1.0):
         # Define grid
