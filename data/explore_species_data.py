@@ -31,9 +31,15 @@ Data sources:
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+DATA_DIR = Path('data')
+
+train_path = DATA_DIR / 'species_train.npz'
+test_path  = DATA_DIR / 'species_test.npz'
 
 # loading training data    
-data = np.load('/Users/jonathancrocker/Downloads/species/species_train.npz')
+data = np.load(train_path)
 train_locs = data['train_locs']  # 2D array, rows are number of datapoints and 
                                  # columns are "latitude" and "longitude"
 train_ids = data['train_ids']    # 1D array, entries are the ID of the species 
@@ -42,7 +48,7 @@ species = data['taxon_ids']      # list of species IDe. Note these do not necess
 species_names = dict(zip(data['taxon_ids'], data['taxon_names']))  # latin names of species 
 
 # loading test data 
-data_test = np.load('/Users/jonathancrocker/Downloads/species/species_test.npz', allow_pickle=True)
+data_test = np.load(test_path, allow_pickle=True)
 print(data_test)
 test_locs = data_test['test_locs']    # 2D array, rows are number of datapoints 
                                       # and columns are "latitude" and "longitude"
@@ -93,7 +99,7 @@ plt.show()
 
 
 
-data = np.load('/Users/jonathancrocker/Downloads/species/species_train.npz')
+data = np.load(train_path)
 print(data.files)
 for key in data.files:
     print(key)
