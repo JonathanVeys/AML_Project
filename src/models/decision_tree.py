@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional, Tuple
+from sklearn.metrics import f1_score
 
 
 # ---------------------------
@@ -239,9 +240,15 @@ if __name__ == "__main__":
 
     acc_top1 = (y_pred == y_te).mean()
     acc_top5 = accuracy_topk(y_te, probs_te, k=5)
+    f1_macro = f1_score(y_te, y_pred, average="macro")
+    f1_weighted = f1_score(y_te, y_pred, average="weighted")
 
     print(f"Test accuracy (top-1): {acc_top1:.4f}")
     print(f"Test accuracy (top-5): {acc_top5:.4f}")
+    print(f"F1 score (macro):      {f1_macro:.4f}")
+    print(f"F1 score (weighted):   {f1_weighted:.4f}")
+
+    
 
     rng = np.random.default_rng()
     i = rng.integers(0, len(X_te))
