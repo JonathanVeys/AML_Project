@@ -194,6 +194,8 @@ def train_and_cache():
 
     ############################
     # testing
+    # this is a fake test not the real test
+    # it is used as a validation data set
     softmax = nn.Softmax(dim=1)
 
     net.eval()
