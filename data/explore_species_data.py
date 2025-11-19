@@ -96,9 +96,6 @@ plt.legend()
 plt.show()
 
 
-
-
-
 data = np.load(train_path)
 print(data.files)
 for key in data.files:

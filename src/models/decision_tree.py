@@ -9,17 +9,6 @@ from sklearn.metrics import f1_score
 # ---------------------------
 # Utilities
 # ---------------------------
-def train_test_split(X, y, test_ratio=0.2, shuffle=True, seed=42):
-    assert len(X) == len(y)
-    n = len(X)
-    idx = np.arange(n)
-    if shuffle:
-        rng = np.random.default_rng(seed)
-        rng.shuffle(idx)
-    test_size = int(n * test_ratio)
-    test_idx = idx[:test_size]
-    train_idx = idx[test_size:]
-    return (X[train_idx], y[train_idx]), (X[test_idx], y[test_idx])
 
 
 def gini_counts(counts: np.ndarray) -> float:
@@ -209,23 +198,46 @@ class SimpleDecisionTree:
 # ---------------------------
 if __name__ == "__main__":
     ROOT = Path(__file__).resolve().parent.parent.parent
-    data = np.load(ROOT / "data/species_train.npz", allow_pickle=True)
 
-    X_data = data["train_locs"].astype(float) 
+    # ---------- Load train data ----------
+    train_data = np.load(ROOT / "data/species_train.npz", allow_pickle=True)
 
-    normalize_latlon_inplace(X_data)
+    X_tr = train_data["train_locs"].astype(float)  # (n_train, 2) lat, lon
+    normalize_latlon_inplace(X_tr)
 
-    taxon_ids = data["taxon_ids"]
+    taxon_ids = train_data["taxon_ids"]            # array of taxon IDs
+    train_ids = train_data["train_ids"]            # taxon ID per training location
+
     id_to_idx = {tid: i for i, tid in enumerate(taxon_ids)}
-    y_data = np.array([id_to_idx[tid] for tid in data["train_ids"]], dtype=int)
+    y_tr = np.array([id_to_idx[tid] for tid in train_ids], dtype=int)
 
     n_classes = len(taxon_ids)
-    print(f"Samples: {len(X_data)} | Classes: {n_classes}")
+    print(f"Train samples: {len(X_tr)} | Classes: {n_classes}")
 
-    # Split
-    (X_tr, y_tr), (X_te, y_te) = train_test_split(X_data, y_data, test_ratio=0.2, shuffle=True, seed=123)
+    # ---------- Load test data ----------
+    test_data = np.load(ROOT / "data/species_test.npz", allow_pickle=True)
+    test_locs = test_data["test_locs"].astype(float)
+    normalize_latlon_inplace(test_locs)
 
-    # Train
+    test_pos_inds = dict(zip(test_data["taxon_ids"], test_data["test_pos_inds"]))
+
+    X_test_list = []
+    y_test_list = []
+
+    for tax_id, inds in test_pos_inds.items():
+        if tax_id not in id_to_idx:
+            continue
+        cls_idx = id_to_idx[tax_id]
+        for idx in inds:
+            X_test_list.append(test_locs[idx])
+            y_test_list.append(cls_idx)
+
+    X_test = np.vstack(X_test_list).astype(float)
+    y_test = np.array(y_test_list, dtype=int)
+
+    print(f"Test samples (positive pairs): {len(X_test)}")
+
+    # ---------- Train ----------
     tree = SimpleDecisionTree(
         max_depth=12,
         min_samples_split=40,
@@ -234,12 +246,13 @@ if __name__ == "__main__":
         n_classes=n_classes,
     ).fit(X_tr, y_tr)
 
-    # Evaluate
+    # ---------- Evaluate ----------
     probs_te = tree.predict_proba(X_te)
     y_pred = probs_te.argmax(axis=1)
 
     acc_top1 = (y_pred == y_te).mean()
     acc_top5 = accuracy_topk(y_te, probs_te, k=5)
+
     f1_macro = f1_score(y_te, y_pred, average="macro")
     f1_weighted = f1_score(y_te, y_pred, average="weighted")
 
@@ -248,33 +261,40 @@ if __name__ == "__main__":
     print(f"F1 score (macro):      {f1_macro:.4f}")
     print(f"F1 score (weighted):   {f1_weighted:.4f}")
 
-    
-
+    # ---------- Example random test sample ----------
     rng = np.random.default_rng()
     i = rng.integers(0, len(X_te))
     probs = tree.predict_proba(X_te[i:i+1])[0]
     top5 = np.argsort(-probs)[:5]
-    taxon_names = dict(zip(data["taxon_ids"], data["taxon_names"]))
+
+    taxon_names = dict(zip(train_data["taxon_ids"], train_data["taxon_names"]))
     idx_to_id = {v: k for k, v in id_to_idx.items()}
 
-    print("\nRandom sample:")
+    print("\nRandom sample from TEST:")
     print(f"  Location (lat, lon): {X_te[i]}")
-    print(f"  True class idx: {y_te[i]}  | taxon_id: {idx_to_id[y_te[i]]} | name: {taxon_names[idx_to_id[y_te[i]]]}")
+    true_idx = y_te[i]
+    true_tax_id = idx_to_id[true_idx]
+    print(f"  True class idx: {true_idx}  | taxon_id: {true_tax_id} | name: {taxon_names[true_tax_id]}")
+
     print("  Top-5 predicted:")
     for rank, cls_idx in enumerate(top5, 1):
         tax_id = idx_to_id[cls_idx]
         name = taxon_names[tax_id]
         print(f"    {rank}. idx={cls_idx:>4}  prob={probs[cls_idx]:.4f}  taxon_id={tax_id}  {name}")
 
+    # ---------- Visualization for one species ----------
     chosen_idx = int(y_tr[rng.integers(0, len(y_tr))])
     chosen_mask_tr = (y_tr == chosen_idx)
     chosen_mask_te = (y_te == chosen_idx)
 
     plt.figure(figsize=(7, 5))
     plt.title(f"Example species idx={chosen_idx} (train/test points)")
-    plt.scatter(X_tr[~chosen_mask_tr, 1], X_tr[~chosen_mask_tr, 0], s=3, alpha=0.1, label="train others")
-    plt.scatter(X_tr[chosen_mask_tr, 1], X_tr[chosen_mask_tr, 0], s=8, alpha=0.7, label="train (chosen)")
-    plt.scatter(X_te[chosen_mask_te, 1], X_te[chosen_mask_te, 0], s=15, marker="x", label="test (chosen)")
+    plt.scatter(X_tr[~chosen_mask_tr, 1], X_tr[~chosen_mask_tr, 0],
+                s=3, alpha=0.1, label="train others")
+    plt.scatter(X_tr[chosen_mask_tr, 1], X_tr[chosen_mask_tr, 0],
+                s=8, alpha=0.7, label="train (chosen)")
+    plt.scatter(X_te[chosen_mask_te, 1], X_te[chosen_mask_te, 0],
+                s=15, marker="x", label="test (chosen)")
     plt.xlabel("longitude")
     plt.ylabel("latitude")
     plt.legend()
