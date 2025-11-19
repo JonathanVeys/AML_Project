@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+from torchmetrics import F1Score
 
 def train_and_cache():
     ############################
@@ -31,18 +32,10 @@ def train_and_cache():
     )
     
     print(len(taxon_names_lookup))
-    
-    # assert len(taxon_names_lookup) == 500 == len(taxon_names_test_lookup)
-    # assert taxon_names_lookup["ID"].is_unique and taxon_names_test_lookup["ID"].is_unique
-
-    data = pd.merge(species_data, taxon_names_lookup, on='ID', how='left')
 
     number_of_classes = len(train_data["taxon_ids"])
     assert number_of_classes == 500
     print("OK")
-    
-    # class_index = pd.Index(pd.Series(train_data["taxon_ids"]).astype(int).unique(), name="ID")
-    # assert len(class_index) == 500
 
     # each row represents one location and each column represents a species ID
     # there is exactly same row
@@ -71,20 +64,19 @@ def train_and_cache():
     # encode the gps coordinate into the sin and cos form as others code
     # the pytorch build in fucntion can not work here
     longitude = torch.tensor(longitude_latitude[:,0]) * torch.pi/180
-    # longitude = torch.deg2rad(longitude_latitude[:,0])
     latitude = torch.tensor(longitude_latitude[:,1]) * torch.pi/180
-    # latitude = torch.deg2rad(longitude_latitude[:,1])
+
     X_processed = torch.stack(
         [torch.sin(longitude), torch.cos(longitude), torch.sin(latitude), torch.cos(latitude)],
     dim=1).float()
     
     # split data into train, eval and test
-    N = X_processed.shape[0]
-    assert N == 272037
+    total_number = X_processed.shape[0]
+    assert total_number == 272037
     labels = y.argmax(dim=1).long()
 
     train_and_eval_ids, test_ids = train_test_split(
-        np.arange(N),
+        np.arange(total_number),
         test_size=0.1,
         random_state=77,
         stratify=labels.cpu().numpy()
@@ -96,10 +88,6 @@ def train_and_cache():
         random_state=77,
         stratify=labels.cpu().numpy()[train_and_eval_ids]
     )
-
-    # train_ids = torch.tensor(train_ids, dtype=torch.long)
-    # test_ids = torch.tensor(test_ids, dtype=torch.long)
-    # eval_ids = torch.tensor(eval_ids, dtype=torch.long)
     
     X_train = X_processed[train_ids]
     y_train = labels[train_ids]
@@ -111,7 +99,8 @@ def train_and_cache():
     ############################
     # my neural network
     number_of_input_units = 4
-    number_of_first_layer_units = 600
+    # the number of units from 1000 to 300 doesnt matter much
+    number_of_first_layer_units = 400
     number_of_output_layer_units = number_of_classes
     
     # 3 hidden layers is good enough
@@ -127,13 +116,11 @@ def train_and_cache():
         nn.ReLU(),
         nn.Dropout(0.2),
         nn.Linear(number_of_first_layer_units, number_of_output_layer_units),
-        # nn.ReLU(),
-        # nn.Dropout(0.2),
-        # nn.Linear(number_of_first_layer_units, number_of_output_layer_units),
     )
 
     learning_rate = 4e-3
     optimiser = torch.optim.Adam(net.parameters(), learning_rate, weight_decay=5e-4)
+
     loss_function = nn.CrossEntropyLoss()
     
     train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=8192, shuffle=True)
@@ -207,6 +194,8 @@ def train_and_cache():
 
     ############################
     # testing
+    # this is a fake test not the real test
+    # it is used as a validation data set
     softmax = nn.Softmax(dim=1)
 
     net.eval()
@@ -214,7 +203,7 @@ def train_and_cache():
     correct_top5 = 0
     total = 0
     test_ce_sum = 0.0
-
+    
     with torch.inference_mode():
         for X_i, y_i in test_loader:
             result_y = net(X_i)
@@ -263,28 +252,13 @@ def train_and_cache():
     print(f"Saved model -> {ts_path}")
     print(f"Saved test data -> {outdir/'test_data_cache.npz'}")
 
-def test_on_trained_model():
+
+def figure_and_metrix(net, test_loader, number_of_classes, topN: int = 100):
     ############################
-    # reload data and model
-    ROOT = Path(__file__).resolve().parents[2]
-    artifacts = ROOT / "artifacts"
-
-    model_path = artifacts / "model.pt"
-    data_path  = artifacts / "test_data_cache.npz"
-
-    net = torch.jit.load(str(model_path), map_location="cpu")
-    # i hope this hard code 500 will not cause any errors
-    number_of_classes = 500
-
-    d = np.load(str(data_path))
-    X_test = torch.from_numpy(d["X_test"])
-    y_test = torch.from_numpy(d["y_test"])
-    test_loader = DataLoader(TensorDataset(X_test, y_test.long()), batch_size=2048, shuffle=False)
-    
-    ############################
-    # evaluate performance and generate a bar diagram and a top1 confusion matrix
+    # evaluate performance and generate a bar diagram
     # focus on top N species
-    topN = 100
+    f1_macro = F1Score(task="multiclass", num_classes=number_of_classes, average="macro")
+    f1_weighted = F1Score(task="multiclass", num_classes=number_of_classes, average="weighted")
 
     class_count = torch.zeros(number_of_classes, dtype=torch.long) # true count per class for recall
     class_correct1 = torch.zeros(number_of_classes, dtype=torch.long) # top1 true positives
@@ -296,6 +270,10 @@ def test_on_trained_model():
     with torch.inference_mode():
         for X_i, y_i in test_loader:
             result_y = net(X_i)
+    
+            # f1
+            f1_macro.update(result_y, y_i)
+            f1_weighted.update(result_y, y_i)
 
             # softmax
             probs = softmax(result_y)
@@ -312,6 +290,12 @@ def test_on_trained_model():
             correct_top5 = (top5 == y_i.unsqueeze(1)).any(dim=1)
             class_correct5 += torch.bincount(y_i[correct_top5], minlength=number_of_classes)
 
+    # f1
+    test_f1_macro = float(f1_macro.compute())
+    test_f1_weighted = float(f1_weighted.compute())
+    print(f"Test F1 (macro): {test_f1_macro:.4f}")
+    print(f"Test F1 (weighted): {test_f1_weighted:.4f}")
+
     # recall for each classes
     denom_true = class_count.clamp_min(1).float()
     recall_top1 = (class_correct1.float() / denom_true).cpu().numpy()
@@ -321,6 +305,8 @@ def test_on_trained_model():
     total_samples = int(class_count.sum().item())
     overall_top1 = float(class_correct1.sum().item() / total_samples)
     overall_top5 = float(class_correct5.sum().item() / total_samples)
+    print(f"Test Top1: {overall_top1:.4f}")
+    print(f"Test Top5: {overall_top5:.4f}")
 
     # means
     mean_recall_top1 = float(np.mean(recall_top1))
@@ -363,8 +349,133 @@ def test_on_trained_model():
 
     plt.show()
 
+
+def test_on_trained_model():
+    ############################
+    # reload data and model
+    ROOT = Path(__file__).resolve().parents[2]
+    artifacts = ROOT / "artifacts"
+
+    model_path = artifacts / "model.pt"
+    data_path  = artifacts / "test_data_cache.npz"
+
+    net = torch.jit.load(str(model_path), map_location="cpu")
+    # i hope this hard code 500 will not cause any errors
+    number_of_classes = 500
+
+    d = np.load(str(data_path))
+    X_test = torch.from_numpy(d["X_test"])
+    y_test = torch.from_numpy(d["y_test"])
+    test_loader = DataLoader(TensorDataset(X_test, y_test.long()), batch_size=2048, shuffle=False)
+    
+    figure_and_metrix(net, test_loader, number_of_classes, topN=100)
+
+
+def test_on_real_test_data():
+    ############################
+    # reload model
+    ROOT = Path(__file__).resolve().parents[2]
+    artifacts = ROOT / "artifacts"
+
+    model_path = artifacts / "model.pt"
+    net = torch.jit.load(str(model_path), map_location="cpu")
+    net.eval()
+
+    ############################
+    # load train data to recover class ID ordering
+    train_data = np.load(ROOT / "data/species_train.npz", allow_pickle=True)
+    class_ids = np.sort(train_data["taxon_ids"].astype(int))
+    number_of_classes = len(class_ids)
+    assert number_of_classes == 500
+
+    # record a map from id to index of model output
+    id_to_index = {}
+    for index in range(len(class_ids)):
+        id = int(class_ids[index])
+        id_to_index[id] = index
+
+    ############################
+    # load real test data
+    data_test = np.load(ROOT / "data/species_test.npz", allow_pickle=True)
+    test_locs = data_test["test_locs"]
+    test_taxon_ids = data_test["taxon_ids"].astype(int)
+    test_pos_inds_raw = data_test["test_pos_inds"]
+
+    assert set(class_ids.tolist()) == set(test_taxon_ids.tolist()), \
+        "fundamental failure!!! they give us a trash test set!!!"
+    
+    ############################
+    # preprocess
+    # encode the gps coordinate into the sin and cos form as others code
+    # the pytorch build in fucntion can not work here
+    longitude = torch.tensor(test_locs[:,0]) * torch.pi/180
+    latitude = torch.tensor(test_locs[:,1]) * torch.pi/180
+    
+    ############################
+    # modfiy the original data structure to (location,species)
+    X_test_processed = torch.stack(
+        [torch.sin(longitude), torch.cos(longitude), torch.sin(latitude), torch.cos(latitude)],
+    dim=1).float()
+    
+    X_list = []
+    y_list = []
+
+    for id, pos_index in zip(test_taxon_ids, test_pos_inds_raw):
+        id = int(id)
+        class_index = id_to_index[id]
+
+        for loc_idx in pos_index:
+            X_list.append(X_test_processed[loc_idx])
+            y_list.append(class_index)
+
+    X_test = torch.stack(X_list, dim=0)
+    y_test = torch.tensor(y_list, dtype=torch.long)
+
+    test_loader = DataLoader(TensorDataset(X_test, y_test), batch_size=2048, shuffle=False)
+    
+    figure_and_metrix(net, test_loader, number_of_classes, topN=100)
+
+
+def check_test_data():
+    ROOT = Path(__file__).resolve().parents[2]
+    data_test = np.load(ROOT / "data/species_test.npz", allow_pickle=True)
+
+    test_locs = data_test["test_locs"]
+    test_taxon_ids = data_test["taxon_ids"]
+    test_pos_inds_raw = data_test["test_pos_inds"]
+
+    locations = test_locs.shape[0]
+    number_of_species = len(test_taxon_ids)
+    print("locations =", locations)
+    print("number_of_species =", number_of_species)
+    print(test_pos_inds_raw.shape)
+
+    # count how many species are present at each test location
+    species_count_per_loc = np.zeros(locations, dtype=np.int32)
+
+    for pos_index in test_pos_inds_raw:
+        # pos_index is a array stores where the species occur
+        species_count_per_loc[pos_index] += 1
+
+    num_zero = np.sum(species_count_per_loc == 0)
+    num_one = np.sum(species_count_per_loc == 1)
+    num_two = np.sum(species_count_per_loc == 2)
+    num_three = np.sum(species_count_per_loc == 3)
+    num_four = np.sum(species_count_per_loc == 4)
+    num_five = np.sum(species_count_per_loc > 4)
+
+    print("locations with 0 species:", num_zero)
+    print("locations with exactly 1 species:", num_one)
+    print("locations with exactly 2 species:", num_two)
+    print("locations with exactly 3 species:", num_three)
+    print("locations with exactly 4 species:", num_four)
+    print("locations with > 4:", num_five )
+
+
 if __name__ == '__main__':
     # if the model have been trained and you dont wann train again
     # just comment out the function below
     train_and_cache()
     test_on_trained_model()
+    test_on_real_test_data()
+    # check_test_data()
